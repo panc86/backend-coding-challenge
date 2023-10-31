@@ -9,14 +9,32 @@ providing a search across all public Gists for a given Github account.
 """
 
 import re
-
 import requests
 from flask import Flask, jsonify, request
 
-# template url to retrieve latest content of raw files in gist
-GIST_LATEST_RAW_FILE_URL = "https://gist.githubusercontent.com/{gist_username}/{gist_id}/raw/{filename}"
 
 app = Flask(__name__)
+
+
+def get_gist_raw_file_urls(gist: dict, username: str) -> list[str]:
+    """Get list of URLs of raw files inside a gist or empty list if no files"""
+    # template url to retrieve latest content of raw files in gist
+    template_url = "https://gist.githubusercontent.com/{gist_username}/{gist_id}/raw/{filename}"
+    filenames = list(gist.get("files", []))
+    return [template_url.format(gist_username=username, gist_id=gist["id"], filename=filename)
+        for filename in filenames] if filenames else filenames
+
+
+def get_raw_file_content(raw_url: str) -> str | None:
+    """Get file content in gist if status code is 200"""
+    response = requests.get(raw_url)
+    if response.status_code == 200:
+        return response.text
+            
+
+def has_pattern(file_content: str, pattern: str) -> bool:
+    """Search regex pattern in the content of raw file URL"""
+    return re.search(pattern, file_content, flags=re.IGNORECASE|re.MULTILINE)
 
 
 @app.route("/ping")
@@ -61,9 +79,6 @@ def search():
     username = post_data['username']
     pattern = post_data['pattern']
 
-    # compile pattern for performance
-    regex = re.compile(pattern, flags=re.IGNORECASE|re.MULTILINE)
-
     result = {}
     result['status'] = 'success'
     result['username'] = username
@@ -73,15 +88,13 @@ def search():
     gists = gists_for_user(username)
 
     for gist in gists:
-        gist_id = gist["id"]
-        gist_html_url = gist["html_url"]
-        filenames = list(gist.get("files"))
-        if not filenames:
+        raw_file_urls = get_gist_raw_file_urls(gist, username)
+        if not raw_file_urls:
             continue
-        for filename in filenames:
-            raw_url = GIST_LATEST_RAW_FILE_URL.format(gist_username=username, gist_id=gist_id, filename=filename)
-            raw_file = requests.get(raw_url)
-            if regex.search(raw_file.text):
+
+        for raw_url in raw_file_urls:
+            content = get_raw_file_content(raw_url)
+            if content is not None and has_pattern(content, pattern):
                 result["matches"].append(raw_url)
 
     return jsonify(result)
