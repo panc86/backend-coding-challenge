@@ -8,9 +8,13 @@ endpoint to verify the server is up and responding and a search endpoint
 providing a search across all public Gists for a given Github account.
 """
 
+import re
+
 import requests
 from flask import Flask, jsonify, request
 
+# template url to retrieve latest content of raw files in gist
+GIST_LATEST_RAW_FILE_URL = "https://gist.githubusercontent.com/{gist_username}/{gist_id}/raw/{filename}"
 
 app = Flask(__name__)
 
@@ -57,17 +61,28 @@ def search():
     username = post_data['username']
     pattern = post_data['pattern']
 
+    # compile pattern for performance
+    regex = re.compile(pattern, flags=re.IGNORECASE|re.MULTILINE)
+
     result = {}
-    gists = gists_for_user(username)
-
-    for gist in gists:
-        # TODO: Fetch each gist and check for the pattern
-        pass
-
     result['status'] = 'success'
     result['username'] = username
     result['pattern'] = pattern
     result['matches'] = []
+
+    gists = gists_for_user(username)
+
+    for gist in gists:
+        gist_id = gist["id"]
+        gist_html_url = gist["html_url"]
+        filenames = list(gist.get("files"))
+        if not filenames:
+            continue
+        for filename in filenames:
+            raw_url = GIST_LATEST_RAW_FILE_URL.format(gist_username=username, gist_id=gist_id, filename=filename)
+            raw_file = requests.get(raw_url)
+            if regex.search(raw_file.text):
+                result["matches"].append(raw_url)
 
     return jsonify(result)
 
