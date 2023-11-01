@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "gistapi"
+version = "0.1.0"
+description = "Gistapi is a simple HTTP API server implemented in Flask for searching a user's public Github Gists."
+authors = ["Emanuele <panc86@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Flask = "2.2.2"
+requests = "2.28.1"
+Werkzeug = "2.2.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-mock = "*"
+
+[tool.poetry.group.dev]
+optional = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
