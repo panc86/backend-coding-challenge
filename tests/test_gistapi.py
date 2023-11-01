@@ -3,7 +3,6 @@ import os
 import sys
 
 import pytest
-import requests
 
 # append directory one level up to allow the main module import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -11,7 +10,10 @@ import gistapi
 
 
 def test_get_gist_raw_file_urls():
-    test_gist = dict(id="test-gist", files={"file1.py": "url_to_file1.py", "file2.py": "url_to_file2.py"})
+    test_gist = dict(
+        id="test-gist",
+        files={"file1.py": "url_to_file1.py", "file2.py": "url_to_file2.py"},
+    )
     expected = [
         "https://gist.githubusercontent.com/username/test-gist/raw/file1.py",
         "https://gist.githubusercontent.com/username/test-gist/raw/file2.py",
@@ -32,7 +34,9 @@ def test_has_pattern():
 
 
 def test_has_not_pattern():
-    assert not gistapi.has_pattern("this is a test string inside a gist file", "not inside")
+    assert not gistapi.has_pattern(
+        "this is a test string inside a gist file", "not inside"
+    )
 
 
 class TestGetFileResponse:
@@ -45,13 +49,19 @@ class TestGetFileResponse:
 
 
 def test_get_raw_file_content(mocker):
-    mocker.patch("gistapi.requests.get", return_value=TestGetFileResponse(text="content", status_code=200))
+    mocker.patch(
+        "gistapi.requests.get",
+        return_value=TestGetFileResponse(text="content", status_code=200),
+    )
     mock_response = gistapi.get_raw_file_content("anyurl")
     assert mock_response == "content"
 
 
 def test_get_raw_file_content_with_status_code_not_200(mocker):
-    mocker.patch("gistapi.requests.get", return_value=TestGetFileResponse(text=None, status_code=404))
+    mocker.patch(
+        "gistapi.requests.get",
+        return_value=TestGetFileResponse(text=None, status_code=404),
+    )
     assert gistapi.get_raw_file_content("anyurl") is None
 
 
@@ -72,21 +82,23 @@ class TestPaginationEmpty:
 
 
 def test_paginated_gists_for_user_with_one_full_page(mocker):
-    mock = mocker.patch("gistapi.requests.get", side_effect=[TestPaginationEmpty()])
+    mocker.patch("gistapi.requests.get", side_effect=[TestPaginationEmpty()])
     result = list(gistapi.paginated_gists_for_user("username"))
     assert len(result) == 0
 
 
 def test_paginated_gists_for_user_with_max_gists(mocker):
     """Stops at the third iteration because of the max gists limit i.e. 3000"""
-    mock = mocker.patch("gistapi.requests.get", side_effect=[TestPaginationWithMaxGists()]*31)
+    mocker.patch(
+        "gistapi.requests.get", side_effect=[TestPaginationWithMaxGists()] * 31
+    )
     result = list(gistapi.paginated_gists_for_user("username"))
     assert len(result) == 30
 
 
 @pytest.fixture
 def client():
-    yield gistapi.app.test_client() 
+    yield gistapi.app.test_client()
 
 
 def test_ping(client):
@@ -97,7 +109,7 @@ def test_ping(client):
 
 @pytest.mark.ftest
 def test_search_with_testing_gist(client, mocker):
-    headers = {'content-type': 'application/json'}
+    headers = {"content-type": "application/json"}
     form = dict(username="panc86", pattern="foo")
     response = client.post("/api/v1/search", data=json.dumps(form), headers=headers)
     result = response.json

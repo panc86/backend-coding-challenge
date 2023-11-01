@@ -19,10 +19,20 @@ app = Flask(__name__)
 def get_gist_raw_file_urls(gist: dict, username: str) -> list[str]:
     """Get list of URLs of raw files inside a gist or empty list if no files"""
     # template url to retrieve latest content of raw files in gist
-    template_url = "https://gist.githubusercontent.com/{gist_username}/{gist_id}/raw/{filename}"
+    template_url = (
+        "https://gist.githubusercontent.com/{gist_username}/{gist_id}/raw/{filename}"
+    )
     filenames = list(gist.get("files", []))
-    return [template_url.format(gist_username=username, gist_id=gist["id"], filename=filename)
-        for filename in filenames] if filenames else filenames
+    return (
+        [
+            template_url.format(
+                gist_username=username, gist_id=gist["id"], filename=filename
+            )
+            for filename in filenames
+        ]
+        if filenames
+        else filenames
+    )
 
 
 def get_raw_file_content(raw_url: str) -> str | None:
@@ -34,11 +44,11 @@ def get_raw_file_content(raw_url: str) -> str | None:
         # handle http errors
         print(dict(url=raw_url, error=error))
     return response.text
-            
+
 
 def has_pattern(file_content: str, pattern: str) -> bool:
     """Search regex pattern in the content of raw file URL"""
-    return re.search(pattern, file_content, flags=re.IGNORECASE|re.MULTILINE)
+    return re.search(pattern, file_content, flags=re.IGNORECASE | re.MULTILINE)
 
 
 @app.route("/ping")
@@ -61,11 +71,13 @@ def gists_for_user(username: str, page: int = 1, per_page: int = 30):
         The dict parsed from the json response from the Github API.  See
         the above URL for details of the expected structure.
     """
-    gists_url = 'https://api.github.com/users/{username}/gists'.format(username=username)
+    gists_url = "https://api.github.com/users/{username}/gists".format(
+        username=username
+    )
     # add parameters for pagination
     params = {
-        'page': page,
-        'per_page': per_page,
+        "page": page,
+        "per_page": per_page,
     }
     response = requests.get(gists_url, params=params)
     try:
@@ -92,7 +104,7 @@ def paginated_gists_for_user(username: str):
         page += 1
 
 
-@app.route("/api/v1/search", methods=['POST'])
+@app.route("/api/v1/search", methods=["POST"])
 def search():
     """Provides matches for a single pattern across a single users gists.
 
@@ -106,14 +118,14 @@ def search():
     """
     post_data = request.get_json()
 
-    username = post_data['username']
-    pattern = post_data['pattern']
+    username = post_data["username"]
+    pattern = post_data["pattern"]
 
     result = {}
-    result['status'] = 'success'
-    result['username'] = username
-    result['pattern'] = pattern
-    result['matches'] = []
+    result["status"] = "success"
+    result["username"] = username
+    result["pattern"] = pattern
+    result["matches"] = []
 
     gists = gists_for_user(username)
 
@@ -130,5 +142,5 @@ def search():
     return jsonify(result)
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=9876)
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=9876)
