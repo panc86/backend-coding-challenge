@@ -52,6 +52,29 @@ def test_get_raw_file_content_with_status_code_not_200(mocker):
     assert gistapi.get_raw_file_content("anyurl") is None
 
 
+class TestPaginationWithMaxGists:
+    def json(self):
+        return [dict(id="test-gist-{n}".format(n=n)) for n in range(100)]
+
+
+class TestPaginationEmpty:
+    def json(self):
+        return []
+
+
+def test_paginated_gists_for_user_with_one_full_page(mocker):
+    mock = mocker.patch("gistapi.requests.get", side_effect=[TestPaginationEmpty()])
+    result = list(gistapi.paginated_gists_for_user("username"))
+    assert len(result) == 0
+
+
+def test_paginated_gists_for_user_with_max_gists(mocker):
+    """Stops at the third iteration because of the max gists limit i.e. 3000"""
+    mock = mocker.patch("gistapi.requests.get", side_effect=[TestPaginationWithMaxGists()]*31)
+    result = list(gistapi.paginated_gists_for_user("username"))
+    assert len(result) == 30
+
+
 @pytest.fixture
 def client():
     yield gistapi.app.test_client() 

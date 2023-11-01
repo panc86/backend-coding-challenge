@@ -43,7 +43,7 @@ def ping():
     return "pong"
 
 
-def gists_for_user(username: str):
+def gists_for_user(username: str, page: int = 1, per_page: int = 30):
     """Provides the list of gist metadata for a given user.
 
     This abstracts the /users/:username/gist endpoint from the Github API.
@@ -58,8 +58,29 @@ def gists_for_user(username: str):
         the above URL for details of the expected structure.
     """
     gists_url = 'https://api.github.com/users/{username}/gists'.format(username=username)
-    response = requests.get(gists_url)
+    # add parameters for pagination
+    params = {
+        'page': page,
+        'per_page': per_page,
+    }
+    response = requests.get(gists_url, params=params)
     return response.json()
+
+
+def paginated_gists_for_user(username: str):
+    # reference: https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#list-public-gists
+    max_gists_per_user = 3000
+    page = 1
+    per_page = 100
+    count = 0
+    # using a generator to handle high volume gists
+    while True:
+        gists = gists_for_user(username, page=page, per_page=per_page)
+        if not gists or count >= max_gists_per_user:
+            break
+        yield gists
+        count += len(gists)
+        page += 1
 
 
 @app.route("/api/v1/search", methods=['POST'])
