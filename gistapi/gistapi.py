@@ -28,8 +28,12 @@ def get_gist_raw_file_urls(gist: dict, username: str) -> list[str]:
 def get_raw_file_content(raw_url: str) -> str | None:
     """Get file content in gist if status code is 200"""
     response = requests.get(raw_url)
-    if response.status_code == 200:
-        return response.text
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as error:
+        # handle http errors
+        print(dict(url=raw_url, error=error))
+    return response.text
             
 
 def has_pattern(file_content: str, pattern: str) -> bool:
@@ -64,6 +68,11 @@ def gists_for_user(username: str, page: int = 1, per_page: int = 30):
         'per_page': per_page,
     }
     response = requests.get(gists_url, params=params)
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as error:
+        # handle http errors
+        print(dict(url=gists_url, error=error))
     return response.json()
 
 

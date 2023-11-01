@@ -40,6 +40,9 @@ class TestGetFileResponse:
         self.text = text
         self.status_code = status_code
 
+    def raise_for_status(self):
+        pass
+
 
 def test_get_raw_file_content(mocker):
     mocker.patch("gistapi.requests.get", return_value=TestGetFileResponse(text="content", status_code=200))
@@ -56,10 +59,16 @@ class TestPaginationWithMaxGists:
     def json(self):
         return [dict(id="test-gist-{n}".format(n=n)) for n in range(100)]
 
+    def raise_for_status(self):
+        pass
+
 
 class TestPaginationEmpty:
     def json(self):
         return []
+
+    def raise_for_status(self):
+        pass
 
 
 def test_paginated_gists_for_user_with_one_full_page(mocker):
