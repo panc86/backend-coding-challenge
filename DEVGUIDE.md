@@ -5,6 +5,14 @@
 > NOTES: The application requires Python version 3.10 or higher
 
 Build and activate the Python virtual environment using the pyproject.toml file.
+
+```shell
+# including development dependencies
+poetry install --with dev
+# activate virtual env
+poetry shell
+```
+
 Then, run the following command from the project's root directory to start the Flask application
 
 ```shell
@@ -23,10 +31,9 @@ Executes the [build-image.sh](./build/build-image.sh) script
 
 Tests runs as intermediate stage inside the Docker image to prevent currupted builds.
 
-However, you can also run it locally
+However, you can also run it locally:
 
 ```shell
-# activate virtual env
 pytest -v
 ```
 

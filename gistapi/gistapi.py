@@ -66,6 +66,8 @@ def gists_for_user(username: str, page: int = 1, per_page: int = 30):
 
     Args:
         username (string): the user to query gists for
+        page (integer): current page number
+        per_page (integer): number of gists per page
 
     Returns:
         The dict parsed from the json response from the Github API.  See
@@ -89,6 +91,16 @@ def gists_for_user(username: str, page: int = 1, per_page: int = 30):
 
 
 def paginated_gists_for_user(username: str):
+    """
+    Implements pagination for gists_for_user().
+
+    Args:
+        username (string): the user to query gists for
+
+    Returns:
+        The dict parsed from the json response from the Github API.  See
+        the above URL for details of the expected structure.
+    """
     # reference: https://docs.github.com/en/rest/gists/gists?apiVersion=2022-11-28#list-public-gists
     max_gists_per_user = 3000
     page = 1
@@ -127,17 +139,20 @@ def search():
     result["pattern"] = pattern
     result["matches"] = []
 
-    gists = gists_for_user(username)
+    try:
+        gists = gists_for_user(username)
+        for gist in gists:
+            raw_file_urls = get_gist_raw_file_urls(gist, username)
+            if not raw_file_urls:
+                continue
 
-    for gist in gists:
-        raw_file_urls = get_gist_raw_file_urls(gist, username)
-        if not raw_file_urls:
-            continue
+            for raw_url in raw_file_urls:
+                content = get_raw_file_content(raw_url)
+                if content is not None and has_pattern(content, pattern):
+                    result["matches"].append(raw_url)
 
-        for raw_url in raw_file_urls:
-            content = get_raw_file_content(raw_url)
-            if content is not None and has_pattern(content, pattern):
-                result["matches"].append(raw_url)
+    except requests.exceptions.ConnectionError:
+        result["status"] = "failed"
 
     return jsonify(result)
 
