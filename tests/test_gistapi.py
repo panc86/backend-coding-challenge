@@ -81,7 +81,7 @@ class TestPaginationEmpty:
         pass
 
 
-def test_paginated_gists_for_user_with_one_full_page(mocker):
+def test_paginated_gists_for_user_with_empty_response(mocker):
     mocker.patch("gistapi.requests.get", side_effect=[TestPaginationEmpty()])
     result = list(gistapi.paginated_gists_for_user("username"))
     assert len(result) == 0
